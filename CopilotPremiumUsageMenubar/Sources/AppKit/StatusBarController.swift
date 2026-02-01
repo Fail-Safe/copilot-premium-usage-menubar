@@ -5,6 +5,17 @@ import CopilotPremiumUsageMenubarCore
 private let CPUMPopoverMaxHeight: CGFloat = 340
 private let CPUMPopoverPreferredWidth: CGFloat = 360
 
+// Tooltip formatting
+// Cache DateFormatter to avoid repeated allocations during frequent menubar updates.
+private let CPUMTooltipDateFormatter: DateFormatter = {
+	let fmt = DateFormatter()
+	fmt.locale = Locale(identifier: "en_US_POSIX")
+	fmt.timeZone = TimeZone.current
+	fmt.dateStyle = .medium
+	fmt.timeStyle = .short
+	return fmt
+}()
+
 // Menubar gauge rendering
 private let CPUMGaugeImagePointSize: CGFloat = 22
 private let CPUMGaugeStrokeWidth: CGFloat = 2
@@ -337,12 +348,7 @@ public final class StatusBarController: NSObject, ObservableObject {
 		}
 
 		if let lastRefresh = state.lastRefreshAt {
-			let fmt = DateFormatter()
-			fmt.locale = Locale(identifier: "en_US_POSIX")
-			fmt.timeZone = TimeZone.current
-			fmt.dateStyle = .medium
-			fmt.timeStyle = .short
-			lines.append("Last refresh: \(fmt.string(from: lastRefresh))")
+			lines.append("Last refresh: \(CPUMTooltipDateFormatter.string(from: lastRefresh))")
 		} else {
 			lines.append("Last refresh: (never)")
 		}

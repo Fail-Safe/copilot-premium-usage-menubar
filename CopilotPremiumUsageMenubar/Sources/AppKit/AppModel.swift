@@ -1,6 +1,7 @@
 import Foundation
 import CopilotPremiumUsageMenubarCore
 import UserNotifications
+import AppKit
 
 private let cpumTokenTestTimeoutSeconds: TimeInterval = 10
 
@@ -43,7 +44,9 @@ public final class AppModel: ObservableObject {
 
 	/// If true, diagnostics will include extra detail about the raw billing response and filtering.
 	/// Keep this off by default to avoid noise in normal use.
-	private let verboseDiagnostics: Bool = true
+	///
+	/// This is gated by `Preferences.debugModeEnabled` to minimize overhead in normal operation.
+	private var verboseDiagnostics: Bool { preferences.debugModeEnabled }
 
 	// MARK: - Included limit source (for UI parity with the VS Code extension)
 
@@ -128,6 +131,40 @@ public final class AppModel: ObservableObject {
 
 	private var refreshTimer: Timer?
 
+	// MARK: - Wake handling
+
+	private var wakeObserver: Any?
+
+	/// Refresh immediately on wake, then reset the polling timer so the next scheduled refresh
+	/// occurs a full interval after wake (not "early" relative to the configured interval).
+	private func installWakeObserverIfNeeded() {
+		guard wakeObserver == nil else { return }
+
+		wakeObserver = NSWorkspace.shared.notificationCenter.addObserver(
+			forName: NSWorkspace.didWakeNotification,
+			object: nil,
+			queue: .main
+		) { [weak self] _ in
+			guard let self else { return }
+
+			// Only do work if we have a token configured.
+			guard self.hasToken else {
+				self.stopAutoRefresh()
+				return
+			}
+
+			// Refresh immediately.
+			self.refreshIfPossible()
+
+			// Reset the timer window (start counting interval from now).
+			self.startAutoRefresh(resetFirstFire: true)
+
+			if self.verboseDiagnostics {
+				self.appendDiagnostic(.info("Wake detected: refreshed and reset auto-refresh interval"))
+			}
+		}
+	}
+
 	// MARK: - Manual refresh cooldown
 
 	private var manualRefreshCooldownTimer: Timer?
@@ -159,14 +196,27 @@ public final class AppModel: ObservableObject {
 
 		self.hasToken = (try? keychain.readToken())?.isEmpty == false
 
-		// React to preference changes that affect refresh cadence.
-		// (Optional) You can get fancier with Combine; this is simple/robust for small apps.
-		startAutoRefresh()
+		// Background refresh policy:
+		// Keep the app up-to-date even if the user never opens the popover.
+		// This is important for confidence and for timely alerts/notifications.
+		//
+		// However, do not spin a background timer if the user hasn't configured a token yet.
+		// We'll start scheduling as soon as a token is set.
+		installWakeObserverIfNeeded()
+		if hasToken {
+			// If we already have a token at startup, refresh immediately first so the menubar reflects
+			// current data without waiting for the interval. Once that completes, schedule interval polling.
+			refreshIfPossible()
+		}
 	}
 
 	deinit {
 		refreshTimer?.invalidate()
 		manualRefreshCooldownTimer?.invalidate()
+
+		if let wakeObserver {
+			NotificationCenter.default.removeObserver(wakeObserver)
+		}
 	}
 
 
@@ -199,30 +249,67 @@ public final class AppModel: ObservableObject {
 
 	/// Useful to call from app lifecycle hooks (e.g. on launch / wake).
 	public func refreshIfPossible() {
-		Task { await refreshInternal(reason: .startup) }
+		Task {
+			await refreshInternal(reason: .startup)
+
+			// After an explicit startup refresh, (re)schedule the interval timer so the next tick happens
+			// a full interval from now. Avoids firing "early" after app launch/wake.
+			if hasToken {
+				startAutoRefresh(resetFirstFire: false)
+			} else {
+				stopAutoRefresh()
+			}
+		}
 	}
 
-	public func startAutoRefresh() {
+	public func startAutoRefresh(resetFirstFire: Bool = false) {
+		// If we don't have a token, don't schedule background polling.
+		guard hasToken else {
+			stopAutoRefresh()
+			if verboseDiagnostics {
+				appendDiagnostic(.info("Auto-refresh not scheduled: token missing"))
+			}
+			return
+		}
+
 		refreshTimer?.invalidate()
 
 		let minutes = max(1, preferences.refreshIntervalMinutes)
 		let interval = TimeInterval(minutes * 60)
 
-		// Schedule on main run loop.
-		let timer = Timer.scheduledTimer(withTimeInterval: interval, repeats: true) { [weak self] _ in
+		// Use a non-repeating timer so we can "reset the interval" after wake:
+		// - when resetFirstFire == true: refresh ASAP, then wait a full interval
+		// - otherwise: refresh on the configured interval
+		let fire: () -> Void = { [weak self] in
 			guard let self else { return }
 			Task { await self.refreshInternal(reason: .timer) }
+
+			// Reschedule the next tick at the configured interval.
+			self.startAutoRefresh(resetFirstFire: false)
 		}
-		timer.tolerance = min(30, interval * 0.1) // be a good citizen
+
+		// "Reset" means: fire quickly now, then schedule the next one interval minutes later.
+		let firstDelay: TimeInterval = resetFirstFire ? 0.1 : interval
+
+		let timer = Timer.scheduledTimer(withTimeInterval: firstDelay, repeats: false) { _ in
+			fire()
+		}
+		timer.tolerance = resetFirstFire ? 0.0 : min(30, interval * 0.1) // be a good citizen
 		refreshTimer = timer
 
-		appendDiagnostic(.info("Auto-refresh scheduled every \(minutes) min"))
+		if verboseDiagnostics {
+			let mode = resetFirstFire ? "immediate" : "interval"
+			appendDiagnostic(.info("Auto-refresh scheduled (\(mode)) every \(minutes) min"))
+		}
 	}
 
 	public func stopAutoRefresh() {
 		refreshTimer?.invalidate()
 		refreshTimer = nil
-		appendDiagnostic(.info("Auto-refresh stopped"))
+
+		if verboseDiagnostics {
+			appendDiagnostic(.info("Auto-refresh stopped"))
+		}
 	}
 
 	// MARK: - Manual refresh cooldown
@@ -274,6 +361,14 @@ public final class AppModel: ObservableObject {
 			try keychain.writeToken(trimmed)
 			hasToken = !trimmed.isEmpty
 			appendDiagnostic(.info("Token saved to Keychain"))
+
+			// Start (or stop) background refresh based on whether we now have a token.
+			installWakeObserverIfNeeded()
+			if hasToken {
+				startAutoRefresh(resetFirstFire: true)
+			} else {
+				stopAutoRefresh()
+			}
 		} catch {
 			appendDiagnostic(.error("Failed saving token to Keychain: \(error)"))
 			lastError = "Failed to save token."
@@ -286,6 +381,9 @@ public final class AppModel: ObservableObject {
 			try keychain.deleteToken()
 			hasToken = false
 			appendDiagnostic(.info("Token deleted from Keychain"))
+
+			// If token is missing, pause background refresh.
+			stopAutoRefresh()
 		} catch {
 			appendDiagnostic(.error("Failed deleting token from Keychain: \(error)"))
 			lastError = "Failed to clear token."
@@ -619,11 +717,15 @@ public final class AppModel: ObservableObject {
 	}
 
 	public func appendDiagnostic(_ event: DiagnosticEvent) {
+		// In normal mode, avoid accumulating memory/CPU overhead from diagnostics.
+		// Keep only a tiny rolling buffer unless Debug Mode is enabled.
+		let limit = preferences.debugModeEnabled ? 200 : 25
+
 		diagnostics.append(event)
 
 		// Keep bounded.
-		if diagnostics.count > 200 {
-			diagnostics.removeFirst(diagnostics.count - 200)
+		if diagnostics.count > limit {
+			diagnostics.removeFirst(diagnostics.count - limit)
 		}
 
 		// Ensure observers who aren't using Combine get notified promptly.

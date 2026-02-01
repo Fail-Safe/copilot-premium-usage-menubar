@@ -39,7 +39,7 @@ struct PopoverView: View {
 
 	@State private var didAttemptAutoPromptForTokenThisSession: Bool = false
 
-	@State private var isSettingsExpanded: Bool = true
+	@State private var isSettingsExpanded: Bool = false
 
 	var body: some View {
 		ScrollView {
@@ -61,13 +61,16 @@ struct PopoverView: View {
 
 				Divider()
 
+				// Only build these sections when expanded to reduce steady-state view work.
 				settingsSection
 
 				Divider()
 
-				diagnosticsSection
-
-				Divider()
+				// Diagnostics are only useful when troubleshooting; hide unless Debug Mode is enabled.
+				if prefs.debugModeEnabled {
+					diagnosticsSection
+					Divider()
+				}
 
 				footerSection
 			}
@@ -86,6 +89,12 @@ struct PopoverView: View {
 			// - Only when token is missing
 			// - Only once per app install (persisted)
 			// - Only once per popover session (prevents repeat prompts if view re-renders)
+			// On first-run, default Settings to expanded to help onboarding.
+			// After the first run, default to collapsed to avoid rendering controls unnecessarily.
+			if UserDefaults.standard.bool(forKey: cpumDidAutoPromptForTokenKey) == false {
+				isSettingsExpanded = true
+			}
+
 			if !app.hasToken,
 			   !didAttemptAutoPromptForTokenThisSession,
 			   UserDefaults.standard.bool(forKey: cpumDidAutoPromptForTokenKey) == false {
@@ -354,7 +363,8 @@ struct PopoverView: View {
 
 	private var settingsSection: some View {
 		DisclosureGroup(isExpanded: $isSettingsExpanded) {
-			VStack(alignment: .leading, spacing: 10) {
+			if isSettingsExpanded {
+				VStack(alignment: .leading, spacing: 10) {
 				// Primary metric toggle (Budget vs Included)
 				HStack {
 					Text("Menubar metric")
@@ -520,6 +530,19 @@ struct PopoverView: View {
 					.onChange(of: prefs.notificationsEnabled) { newValue in
 						app.setNotificationsEnabled(newValue)
 					}
+
+					Divider()
+						.padding(.vertical, 4)
+
+					Toggle(isOn: $prefs.debugModeEnabled) {
+						Text("Debug mode")
+					}
+
+					Text("When enabled, the app keeps a larger diagnostics buffer and shows the Diagnostics section for troubleshooting.")
+						.font(.caption)
+						.foregroundStyle(.secondary)
+						.lineLimit(3)
+				}
 				}
 			}
 		} label: {
@@ -651,6 +674,28 @@ struct PopoverView: View {
 
 				Spacer()
 
+				HStack(spacing: 6) {
+					Text(appVersionString())
+						.font(.caption.monospacedDigit())
+						.foregroundStyle(.secondary)
+						.lineLimit(1)
+
+					if !appVersionString().isEmpty {
+						Button {
+							let text = appVersionString()
+							NSPasteboard.general.clearContents()
+							NSPasteboard.general.setString(text, forType: .string)
+						} label: {
+							Image(systemName: "doc.on.doc")
+								.font(.caption)
+						}
+						.buttonStyle(.plain)
+						.help("Copy version")
+					}
+				}
+
+				Spacer()
+
 				Button("Quit") {
 					app.quit()
 				}
@@ -663,7 +708,30 @@ struct PopoverView: View {
 
 // MARK: - Supporting Views
 
-private struct MetricRow: View {
+	private func appVersionString() -> String {
+		let short = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String
+		let build = Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String
+
+		let shortClean = short?.isEmpty == false ? short : nil
+		let buildClean = build?.isEmpty == false ? build : nil
+
+		#if DEBUG
+		switch (shortClean, buildClean) {
+		case let (s?, b?): return "v\(s) (\(b))"
+		case let (s?, nil): return "v\(s)"
+		case let (nil, b?): return "(\(b))"
+		default: return ""
+		}
+		#else
+		switch (shortClean, buildClean) {
+		case let (s?, _): return "v\(s)"
+		case let (nil, b?): return "\(b)"
+		default: return ""
+		}
+		#endif
+	}
+
+	private struct MetricRow: View {
 	let title: String
 	let primaryText: String
 	let secondaryText: String

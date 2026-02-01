@@ -78,6 +78,9 @@ public final class Preferences: ObservableObject {
         static let includedPremiumRequestsOverride = "cpum.includedPremiumRequestsOverride" // optional
         static let pricePerPremiumRequestOverride = "cpum.pricePerPremiumRequestOverride" // optional
 
+        // Debugging/diagnostics
+        static let debugModeEnabled = "cpum.debugModeEnabled"
+
         // One-time onboarding: used to decide whether we should auto-open the token prompt
         // the first time the user opens the UI and no token is configured.
         static let didAutoPromptForToken = "cpum.didAutoPromptForToken"
@@ -189,6 +192,14 @@ public final class Preferences: ObservableObject {
         didSet { defaults.set(max(0, pricePerPremiumRequestOverride), forKey: Keys.pricePerPremiumRequestOverride) }
     }
 
+    // MARK: - Debugging / diagnostics
+
+    /// Enables additional diagnostics output and UI (intended for troubleshooting).
+    /// Defaults to `false` to minimize noise and overhead for normal users.
+    @Published public var debugModeEnabled: Bool {
+        didSet { defaults.set(debugModeEnabled, forKey: Keys.debugModeEnabled) }
+    }
+
     // MARK: - One-time onboarding (token prompt)
 
     /// If `false` and no token is configured, the UI may choose to auto-open the "Set Token" prompt
@@ -239,6 +250,8 @@ public final class Preferences: ObservableObject {
         let priceOverride = defaults.object(forKey: Keys.pricePerPremiumRequestOverride) as? Double ?? 0.0
         self.pricePerPremiumRequestOverride = max(0, priceOverride)
 
+        self.debugModeEnabled = defaults.object(forKey: Keys.debugModeEnabled) as? Bool ?? false
+
         self.didAutoPromptForToken = defaults.object(forKey: Keys.didAutoPromptForToken) as? Bool ?? false
     }
 
@@ -279,6 +292,7 @@ public final class Preferences: ObservableObject {
         selectedPlanId = ""
         includedPremiumRequestsOverride = 0
         pricePerPremiumRequestOverride = 0
+        debugModeEnabled = false
         didAutoPromptForToken = false
     }
 

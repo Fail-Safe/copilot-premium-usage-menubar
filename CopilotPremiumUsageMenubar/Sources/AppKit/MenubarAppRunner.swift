@@ -145,8 +145,11 @@ final class MenubarAppDelegate: NSObject, NSApplicationDelegate {
 		// Add a startup diagnostic to make it obvious the UI wiring is live.
 		model.appendDiagnostic(.info("Menubar app launched; UI wired"))
 
-		// Kick off an initial refresh (non-interactive; will show token-missing state if absent).
-		model.refreshIfPossible()
+		// Startup refresh + timer scheduling are owned by `AppModel`.
+		//
+		// Rationale:
+		// - Prevent duplicate refreshes/scheduling when both the runner and model try to "help".
+		// - Keep lifecycle policy in one place (AppModel handles token-missing pause, wake refresh, timer resets).
 
 		// Menubar-only feel.
 		NSApp.setActivationPolicy(.accessory)

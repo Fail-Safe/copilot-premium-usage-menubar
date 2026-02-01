@@ -12,6 +12,8 @@ Thumbs.db
 
 # Xcode
 .DerivedData/
+.build/
+*.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/configuration/
 *.xcuserstate
 *.xccheckout
 *.xcscmblueprint
@@ -28,6 +30,8 @@ xcuserdata/
 *.dSYM.tar.gz
 
 # Swift Package Manager
-.build/
 Packages/
 .swiftpm/
+
+# Xcode / wrapper app build outputs
+build/

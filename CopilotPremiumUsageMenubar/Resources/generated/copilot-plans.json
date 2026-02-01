@@ -1,0 +1,33 @@
+{
+  "source": "bundled",
+  "description": "Bundled Copilot plan mapping for the macOS menubar app. Values are used when a plan is selected in settings to determine the included premium request limit and default per-request price. GitHub does not expose personal Copilot plan via public API; this file intentionally avoids any runtime scraping.",
+  "fetchedAt": null,
+  "pricePerPremiumRequest": 0.04,
+  "plans": [
+    {
+      "id": "copilot-free",
+      "name": "Copilot Free",
+      "includedPremiumRequestsPerMonth": 50
+    },
+    {
+      "id": "copilot-pro",
+      "name": "Copilot Pro",
+      "includedPremiumRequestsPerMonth": 300
+    },
+    {
+      "id": "copilot-proplus",
+      "name": "Copilot Pro+",
+      "includedPremiumRequestsPerMonth": 1500
+    },
+    {
+      "id": "copilot-business",
+      "name": "Copilot Business",
+      "includedPremiumRequestsPerMonth": 300
+    },
+    {
+      "id": "copilot-enterprise",
+      "name": "Copilot Enterprise",
+      "includedPremiumRequestsPerMonth": 1000
+    }
+  ]
+}

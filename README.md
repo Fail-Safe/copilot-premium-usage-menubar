@@ -1,10 +1,10 @@
 # Copilot Premium Usage Menubar (macOS)
 
-## License
+## Disclaimer
 
-MIT — see `LICENSE`.
+Not affiliated with or endorsed by GitHub. “GitHub” and “Copilot” are trademarks of their respective owners.
 
-A macOS menubar utility that mimics the core value of the [**Copilot Premium Usage Monitor**](https://marketplace.visualstudio.com/items?itemName=GitHub.copilot-premium-usage-monitor) VS Code extension:
+A macOS menubar utility inspired by the [**Copilot Premium Usage Monitor**](https://marketplace.visualstudio.com/items?itemName=fail-safe.copilot-premium-usage-monitor) VS Code extension:
 
 - Fetches your **Copilot** spend and premium request counts via GitHub’s billing usage API.
 - Displays a **single selected metric** in the macOS menubar (toggle: **Budget %** vs **Included %**).
@@ -70,13 +70,18 @@ Until an official budgets endpoint is confirmed and implemented, the app will ef
 
 ## Project layout
 
-- `CopilotPremiumUsageMenubar/`
+This repo contains two runnable pieces:
+
+- `CopilotPremiumUsageMenubar/` (SwiftPM package)
   - `Package.swift`
   - `Sources/Core/` – domain logic and services
   - `Sources/AppKit/` – AppKit menubar host + SwiftUI popover + app controller/model
-  - `Sources/App/` – SwiftPM executable entrypoint (`main.swift`)
+  - `Sources/App/` – SwiftPM executable entrypoint (`main.swift`) for development
 
-Key files:
+- `CopilotPremiumUsageMenubarAppWrapper/` (Xcode wrapper app)
+  - Conventional `.xcodeproj` used to run the menubar as a proper `.app` bundle (assets/signing/entitlements)
+
+Key files (SwiftPM package):
 - `Sources/Core/GitHubClient.swift` – minimal GitHub HTTP client
 - `Sources/Core/UsageService.swift` – billing usage fetch + computation + view-state computation
 - `Sources/Core/KeychainStore.swift` – secure token storage
@@ -91,7 +96,7 @@ Key files:
 
 ## Building & Running
 
-### Option A: open in Xcode (recommended)
+### Option A: run the SwiftPM package in Xcode (recommended for development)
 1. Open Xcode.
 2. Use **File → Open…**
 3. Select `CopilotPremiumUsageMenubar/Package.swift`
@@ -99,9 +104,17 @@ Key files:
    - `CopilotPremiumUsageMenubarApp`
 5. Run.
 
-This is the easiest way to run a menubar UI app during development.
+This is the easiest way to iterate on the menubar UI and core logic.
 
-### Option B: build/run from CLI (development)
+### Option B: run the wrapper `.app` in Xcode (recommended for “real app” behavior)
+The wrapper app runs the menubar utility as a proper `.app` bundle (best for notifications and any bundle-identifier-dependent behavior).
+
+1. Open `CopilotPremiumUsageMenubarAppWrapper/CopilotPremiumUsageMenubarAppWrapper.xcodeproj`
+2. Select the scheme:
+   - `CopilotPremiumUsageMenubarAppWrapper`
+3. Run.
+
+### Option C: build/run from CLI (development)
 You can build the Swift package from Terminal. Running the menubar app via `swift run` is supported for development, but some macOS behaviors (notably notifications) work best when launched as a proper `.app` bundle via Xcode.
 
 If you just want to ensure code compiles:
@@ -141,7 +154,7 @@ If you just want to ensure code compiles:
 
 ## License
 
-This menubar component is intended to follow the repository’s license (MIT). Verify `CopilotPremiumUsageMonitor/LICENSE`.
+MIT — see `LICENSE`.
 
 ---
 
@@ -149,5 +162,5 @@ This menubar component is intended to follow the repository’s license (MIT). V
 
 For now:
 - Keep the core logic in `Sources/Core` as dependency-free as possible.
-- Keep UI in `Sources/App`.
+- Keep UI in `Sources/AppKit`.
 - Prefer explicit error handling; surface actionable errors in the popover UI.

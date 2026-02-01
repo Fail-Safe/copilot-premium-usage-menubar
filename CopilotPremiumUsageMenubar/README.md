@@ -1,6 +1,10 @@
 # Copilot Premium Usage Menubar (macOS)
 # Copilot Premium Usage Menubar (macOS)
 
+## Disclaimer
+
+Not affiliated with or endorsed by GitHub. “GitHub” and “Copilot” are trademarks of their respective owners.
+
 ## License
 
 MIT — see `../../LICENSE`.

@@ -1,5 +1,4 @@
 # Copilot Premium Usage Menubar (macOS)
-# Copilot Premium Usage Menubar (macOS)
 
 ## Disclaimer
 

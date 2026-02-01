@@ -1,9 +1,5 @@
 # Copilot Premium Usage Menubar (macOS)
 
-## Disclaimer
-
-Not affiliated with or endorsed by GitHub. “GitHub” and “Copilot” are trademarks of their respective owners.
-
 A macOS menubar utility inspired by the [**Copilot Premium Usage Monitor**](https://marketplace.visualstudio.com/items?itemName=fail-safe.copilot-premium-usage-monitor) VS Code extension:
 
 - Fetches your **Copilot** spend and premium request counts via GitHub’s billing usage API.
@@ -164,3 +160,7 @@ For now:
 - Keep the core logic in `Sources/Core` as dependency-free as possible.
 - Keep UI in `Sources/AppKit`.
 - Prefer explicit error handling; surface actionable errors in the popover UI.
+
+## Disclaimer
+
+Not affiliated with or endorsed by GitHub. “GitHub” and “Copilot” are trademarks of their respective owners.

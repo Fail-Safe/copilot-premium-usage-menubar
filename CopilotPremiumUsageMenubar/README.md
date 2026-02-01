@@ -29,10 +29,10 @@ This project includes an `Info.plist` at:
 That file defines `CFBundleIdentifier` and also sets `LSUIElement` (menubar-only).
 
 
-This directory contains a small macOS menubar utility that monitors GitHub Copilot Premium Request usage and displays:
+This directory contains a small macOS menubar utility that monitors GitHub Copilot premium requests usage and displays:
 
 - Budget usage percent (with warn/danger thresholds)
-- Included premium request usage (based on a user-selected Copilot plan or custom override)
+- Included premium requests usage (based on a user-selected Copilot plan or custom override)
 - Diagnostics and token troubleshooting actions
 - Secure PAT storage via Keychain
 
@@ -114,7 +114,14 @@ If you ever want a Dock icon for debugging, temporarily flip `LSUIElement` to `f
 
 ## Token setup (PAT)
 
-You need a GitHub token with access to read Enhanced Billing usage endpoints.
+You need a GitHub Personal Access Token (PAT) that can read the billing usage endpoint this app calls.
+
+Create/manage tokens here:
+- https://github.com/settings/personal-access-tokens
+
+Recommended (least privilege) configuration (fine-grained PAT):
+- **Repository access:** None
+- **User permissions:** **Plan: Read**
 
 In the app:
 - Open the menubar popover.

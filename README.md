@@ -2,7 +2,7 @@
 
 A macOS menubar utility inspired by the [**Copilot Premium Usage Monitor**](https://marketplace.visualstudio.com/items?itemName=fail-safe.copilot-premium-usage-monitor) VS Code extension:
 
-- Fetches your **Copilot** spend and premium request counts via GitHub’s billing usage API.
+- Fetches your **Copilot** spend and premium request counts (Copilot **premium requests**) via GitHub’s billing usage API.
 - Displays a **single selected metric** in the macOS menubar (toggle: **Budget %** vs **Included %**).
 - Shows a compact popover with both metrics and settings.
 - Optionally sends background notifications when thresholds are crossed.
@@ -57,10 +57,13 @@ Until an official budgets endpoint is confirmed and implemented, the app will ef
 ## Requirements
 
 - macOS 13+ (as configured in the Swift package manifest)
-- Xcode (recommended for running UI apps)
+- Xcode (recommended; developed with **Xcode 26.2**). If you run into build issues on older Xcode, please open an issue with your `xcodebuild -version` output.
 - A GitHub **Personal Access Token** (PAT) that can call the billing usage endpoint.
-  - The VS Code extension’s README suggests **Plan: read-only** permission.
-  - If you use a fine-grained PAT, ensure it can access the relevant billing usage scopes.
+  - Create/manage tokens here: https://github.com/settings/personal-access-tokens
+  - Recommended (tested): **fine-grained PAT**
+    - **Repository access:** None
+    - **User permissions:** **Plan: Read**
+  - If you run into authorization errors, confirm your token permissions and try **Test Token** in the app.
 
 ---
 
@@ -92,23 +95,23 @@ Key files (SwiftPM package):
 
 ## Building & Running
 
-### Option A: run the SwiftPM package in Xcode (recommended for development)
-1. Open Xcode.
-2. Use **File → Open…**
-3. Select `CopilotPremiumUsageMenubar/Package.swift`
-4. Select the executable scheme:
-   - `CopilotPremiumUsageMenubarApp`
-5. Run.
-
-This is the easiest way to iterate on the menubar UI and core logic.
-
-### Option B: run the wrapper `.app` in Xcode (recommended for “real app” behavior)
+### Option A: run the wrapper `.app` in Xcode (recommended)
 The wrapper app runs the menubar utility as a proper `.app` bundle (best for notifications and any bundle-identifier-dependent behavior).
 
 1. Open `CopilotPremiumUsageMenubarAppWrapper/CopilotPremiumUsageMenubarAppWrapper.xcodeproj`
 2. Select the scheme:
    - `CopilotPremiumUsageMenubarAppWrapper`
 3. Run.
+
+### Option B: run the SwiftPM package in Xcode (alternative)
+This is useful if you’re primarily working inside the SwiftPM package.
+
+1. Open Xcode.
+2. Use **File → Open…**
+3. Select `CopilotPremiumUsageMenubar/Package.swift`
+4. Select the executable scheme:
+   - `CopilotPremiumUsageMenubarApp`
+5. Run.
 
 ### Option C: build/run from CLI (development)
 You can build the Swift package from Terminal. Running the menubar app via `swift run` is supported for development, but some macOS behaviors (notably notifications) work best when launched as a proper `.app` bundle via Xcode.
@@ -129,11 +132,14 @@ If you just want to ensure code compiles:
 
 ---
 
+## Distribution
+
+This project is currently distributed as **source-only** (no signed/notarized `.app` downloads yet). To run it, build locally with Xcode (see “Building & Running”).
+
 ## TODO / Known gaps (expected for skeleton state)
 
 - Continue UI/UX polish (copy, layout, disabled states, error presentation).
 - Harden edge cases (missing billing data, rate limits, token scope issues).
-- Notarization/signing and GitHub Releases packaging (DMG/ZIP) for distribution.
 - Decide whether to persist the last successful summary to show immediately on launch.
 - Decide whether to support GHES base URL configuration.
 - Notarization/signing and GitHub Releases packaging (DMG/ZIP) for distribution.

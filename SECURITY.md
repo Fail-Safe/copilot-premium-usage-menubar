@@ -27,7 +27,7 @@ You should receive an acknowledgement within **3 business days**.
 This repository contains a macOS menubar app (Swift/SwiftUI/AppKit) that monitors **Copilot Premium Requests** usage and displays:
 
 - Budget usage percent (user-configured budget with warn/danger thresholds)
-- Included premium request usage (based on a selected Copilot plan or manual override)
+- Included premium requests usage (based on a selected Copilot plan or manual override)
 - Diagnostics and token troubleshooting actions
 - Optional local notifications
 

@@ -10,24 +10,29 @@ MIT — see `../../LICENSE`.
 
 This repository contains two ways to run the app:
 
-1) **SwiftPM package** (`CopilotPremiumUsageMenubar/`)  
+1) **SwiftPM package** (`CopilotPremiumUsageMenubar/`)
    - Contains the core library + AppKit/SwiftUI menubar UI
    - Includes a SwiftPM executable entrypoint (`Sources/App/main.swift`) for development
 
-2) **Xcode wrapper app** (`CopilotPremiumUsageMenubarAppWrapper/`)  
-   - A conventional Xcode `.app` project (assets, entitlements, signing)
+2) **Xcode wrapper app** (`CopilotPremiumUsageMenubarAppWrapper/`)
+   - A conventional Xcode `.app` project (assets, signing, packaging)
    - Calls into the SwiftPM `CopilotPremiumUsageMenubarAppKit` library to run the menubar app
 
-This app is intended to run as a **proper macOS `.app` bundle** for the best macOS behavior (notifications, bundle identifier, resources). If you run via `swift run`, you may see limitations.
+### Which should you run?
 
-If you see messages like “Cannot index window tabs due to missing main bundle identifier”, it typically means macOS cannot find a valid **bundle identifier** for the running process.
+For day-to-day usage, prefer the **wrapper `.app`** so you get the most “normal macOS app bundle” behavior (bundle identifier, version/build metadata, and resource handling).
 
-This project includes an `Info.plist` at:
+You *can* run the SwiftPM executable for development, but some macOS behaviors work best from a full `.app`.
+
+### Info.plist (SwiftPM resources)
+
+This package includes an `Info.plist` at:
 
 - `Resources/Info.plist`
 
-That file defines `CFBundleIdentifier` and also sets `LSUIElement` (menubar-only).
+It provides bundle metadata such as `CFBundleIdentifier` and sets `LSUIElement = true` (menubar-only).
 
+Note: when running via the wrapper `.app`, the wrapper’s app bundle metadata is what macOS primarily uses.
 
 This directory contains a small macOS menubar utility that monitors GitHub Copilot premium requests usage and displays:
 
@@ -80,13 +85,9 @@ If you see:
 
 - “Cannot index window tabs due to missing main bundle identifier”
 
-then macOS is not seeing a valid `CFBundleIdentifier` for the current process.
+it typically means the running process does not have a valid bundle identity (i.e., you’re not running as a normal `.app` bundle, or the bundle metadata is missing).
 
-This repository provides an explicit `Info.plist` at:
-
-- `Resources/Info.plist`
-
-which sets `CFBundleIdentifier` and `LSUIElement` to ensure the app is a menubar-only bundle with a stable identifier.
+This repo includes `Resources/Info.plist` for SwiftPM builds, and the wrapper `.app` also provides bundle metadata. Prefer running the wrapper `.app` if you hit bundle-identifier-related issues.
 
 ### Locate the built `.app`
 
@@ -149,13 +150,13 @@ The plan mapping is bundled as a JSON resource under:
 
 ## Bundle resources (plan JSON + Info.plist)
 
-This SwiftPM package includes resources for the app target via `Package.swift`.
+This SwiftPM package includes resources via `Package.swift` (the `CopilotPremiumUsageMenubarAppKit` target processes `Resources/`).
 
 Bundled resources include:
 - `Resources/generated/copilot-plans.json`
-- `Resources/Info.plist` (bundle identifier + menubar-only `LSUIElement`)
+- `Resources/Info.plist` (bundle metadata, including `LSUIElement`)
 
-If you modify either, rebuild the app to pick up the changes.
+If you modify resources, rebuild the app to pick up the changes. If you’re running via the wrapper `.app`, rebuild the wrapper target so it embeds the updated SwiftPM resources.
 
 ---
 

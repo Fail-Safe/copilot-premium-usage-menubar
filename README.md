@@ -3,7 +3,7 @@
 A macOS menubar utility inspired by the [**Copilot Premium Usage Monitor**](https://marketplace.visualstudio.com/items?itemName=fail-safe.copilot-premium-usage-monitor) VS Code extension:
 
 - Fetches your **Copilot** spend and premium request counts (Copilot **premium requests**) via GitHub’s billing usage API.
-- Displays a **single selected metric** in the macOS menubar (toggle: **Budget %** vs **Included %**).
+- Displays a **configurable metric** in the macOS menubar (options: **Budget %**, **Included %**, or **Included → Budget (combined)**).
 - Shows a compact popover with both metrics and settings.
 - Optionally sends background notifications when thresholds are crossed.
 
@@ -38,7 +38,7 @@ This project is functional and actively evolving. Core usage fetching, Keychain 
 ### UI/menubar plumbing
 - Status bar controller and a SwiftUI popover UI.
 - Menubar title updates based on settings (Budget % or Included %).
-- Diagnostics/events view for troubleshooting refreshes and token issues.
+- Diagnostics/events view for troubleshooting refreshes and token issues (shown when Debug Mode is enabled).
 
 ---
 

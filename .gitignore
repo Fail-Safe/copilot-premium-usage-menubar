@@ -1,0 +1,33 @@
+# macOS / OS artifacts
+.DS_Store
+.DS_Store?
+.AppleDouble
+.LSOverride
+Icon?
+._*
+.Spotlight-V100
+.Trashes
+.fseventsd
+Thumbs.db
+
+# Xcode
+.DerivedData/
+*.xcuserstate
+*.xccheckout
+*.xcscmblueprint
+*.xcbkptlist
+*.xcodeproj/*/xcuserdata/
+*.xcodeproj/*/project.xcworkspace/xcuserdata/
+*.xcworkspace/xcuserdata/
+*.xcworkspace/contents.xcworkspacedata
+xcuserdata/
+*.moved-aside
+*.ipa
+*.dSYM
+*.dSYM.zip
+*.dSYM.tar.gz
+
+# Swift Package Manager
+.build/
+Packages/
+.swiftpm/
